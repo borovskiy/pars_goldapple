@@ -70,7 +70,7 @@ def search_and_check_description(data_from_selenium) -> str:
     except Exception:
         button = False
     finally:
-        description = data_from_selenium.find_element(By.XPATH,'.//section[@itemprop="description"]').text
+        description = data_from_selenium.find_element(By.XPATH, './/section[@itemprop="description"]').text
         return description
 
 
