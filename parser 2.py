@@ -6,8 +6,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from error_checking import search_and_check_description, search_and_check_discount, search_and_check_link_image, \
     search_and_check_path_bread_crumbs, search_and_check_price, search_and_check_title__of_product, \
-    search_and_check_type_of_product, search_and_check_vendor_code
-import datetime
+    search_and_check_type_of_product, search_and_check_vendor_code, search_and_check_unit_of_product, \
+    search_and_check_volume_of_product
+
 FILE_NAME = "goods.csv"
 
 
@@ -18,7 +19,7 @@ def start_selenium_session():
     return selenium.webdriver.Chrome('chromedriver.exe', options=options)
 
 
-def getting_product_data_from_page(data_from_selenium, link: str, volume: Union[str, None]) -> dict:
+def getting_product_data_from_page(data_from_selenium, unit, link: str, volume: Union[str, None]) -> dict:
     """
     Запонение словаря данными о товаре со страницы
     :param data_from_selenium:
@@ -30,13 +31,14 @@ def getting_product_data_from_page(data_from_selenium, link: str, volume: Union[
         search_and_check_vendor_code(data_from_selenium):
             {
                 "path_bread_crumbs": search_and_check_path_bread_crumbs(data_from_selenium=data_from_selenium),
-                "unit": search_and_check_type_of_product(data_from_selenium=data_from_selenium),
+                "type": search_and_check_type_of_product(data_from_selenium=data_from_selenium),
                 "title": search_and_check_title__of_product(data_from_selenium=data_from_selenium),
                 "price": search_and_check_price(data_from_selenium=data_from_selenium),
                 "discount": search_and_check_discount(data_from_selenium=data_from_selenium),
                 'link_image': search_and_check_link_image(data_from_selenium=data_from_selenium),
                 'product_description': search_and_check_description(data_from_selenium=data_from_selenium),
                 'volume': volume,
+                'unit': unit,
                 'link': link,
                 'art': search_and_check_vendor_code(data_from_selenium=data_from_selenium)
             }
@@ -57,14 +59,16 @@ def getting_text_data_good(url: str) -> dict:
     #  Проверка на наличие кнопки выбора объема торава
     swatches = driver.find_element(By.XPATH, '//div[@class="pdp-form__swatches pdp-form-swatches"]')
     button = swatches.find_elements(By.XPATH, '//button[@tabindex="-1"]')
+    unit = search_and_check_unit_of_product(data_from_selenium=driver)
     if len(button) > 0:
         button = [element for element in button if element.is_displayed()]
         for i in button:
             i.click()
-            page_info.update(getting_product_data_from_page(data_from_selenium=driver, link=url, volume=i.text))
+            page_info.update(
+                getting_product_data_from_page(data_from_selenium=driver, link=url, volume=i.text, unit=unit))
     else:
-        button = None
-        page_info = getting_product_data_from_page(data_from_selenium=driver, link=url, volume=button)
+        button = search_and_check_volume_of_product(driver)
+        page_info = getting_product_data_from_page(data_from_selenium=driver, link=url, volume=button, unit=unit)
     driver.close()
     return page_info
 
@@ -104,13 +108,13 @@ def site_parsing_goldapple():
     for brand in brands_links_list:
         list_links_to_brand_products = getting_links_to_brand_products(brand)
         for product in list_links_to_brand_products:
-            print(f'записываю продукт продукт--,{product},время -- {datetime.datetime.now()}')
-            data = getting_text_data_good(product)
-            with open(FILE_NAME, "a", encoding='utf-8', ) as file:
+            with open(FILE_NAME, "a", encoding='utf-8') as file:
+                data = getting_text_data_good(product)
                 for item in data.values():
-                    writer = csv.DictWriter(file, item.keys(), delimiter='\t')
+                    print(item)
+                    writer = csv.DictWriter(file, fieldnames=item.keys())
+                    writer.writeheader()
                     writer.writerow(item)
-            print(f'записал!!! время -- {datetime.datetime.now()}')
 
 
 site_parsing_goldapple()

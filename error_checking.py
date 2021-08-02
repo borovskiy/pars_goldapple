@@ -7,12 +7,13 @@ def decorator_exception(func):
     :param func:
     :return:
     """
+
     def wrapper(data_from_selenium):
         try:
             text = func(data_from_selenium)
             return text
         except Exception:
-            return f'None'
+            return None
 
     return wrapper
 
@@ -47,7 +48,7 @@ def search_and_check_price(data_from_selenium) -> str:
     :param data_from_selenium:
     :return:
     """
-    price = data_from_selenium.find_element(By.XPATH, './/span[@class="special-price"]').get_attribute()
+    price = data_from_selenium.find_element(By.XPATH, './/span[@class="special-price"]').text
     return price
 
 
@@ -63,12 +64,14 @@ def search_and_check_discount(data_from_selenium) -> str:
 @decorator_exception
 def search_and_check_description(data_from_selenium) -> str:
     """Поиска описания товара"""
-    button = data_from_selenium.find_element(By.XPATH, './/button[@class="product-description__read-more"]')
-    if button.is_displayed():
+    try:
+        button = data_from_selenium.find_element(By.XPATH, './/button[@class="product-description__read-more"]')
         button.click()
-    description = data_from_selenium.find_element(By.XPATH,
-                                                  './/section[@itemprop="description"]').text
-    return description.replace('\n', ' ')
+    except Exception:
+        button = False
+    finally:
+        description = data_from_selenium.find_element(By.XPATH,'.//section[@itemprop="description"]').text
+        return description
 
 
 @decorator_exception
@@ -90,7 +93,7 @@ def search_and_check_type_of_product(data_from_selenium) -> str:
     :param data_from_selenium:
     :return:
     """
-    for data_unit in data_from_selenium.find_elements(By.XPATH, '//p[@class="subheading-1 pdp-subheading"]'):
+    for data_unit in data_from_selenium.find_elements(By.XPATH, '//p[@class="subheading-1-2 pdp-title__type"]'):
         if data_unit.is_displayed():
             unit_good = data_unit.text.lower()
             return unit_good
@@ -107,3 +110,34 @@ def search_and_check_title__of_product(data_from_selenium) -> str:
         if data_title.is_displayed():
             title_good = data_title.text.lower()
             return title_good
+
+
+@decorator_exception
+def search_and_check_title_of_product(data_from_selenium) -> str:
+    """
+    Поиска на название продукта(заголвок товара)
+    :param data_from_selenium:
+    :return:
+    """
+    for data_title in data_from_selenium.find_elements(By.XPATH, '//h1[@itemprop="name"]'):
+        if data_title.is_displayed():
+            title_good = data_title.text.lower()
+            return title_good
+
+
+@decorator_exception
+def search_and_check_unit_of_product(data_from_selenium) -> str:
+    """
+    Поиска на название продукта(заголвок товара)
+    :param data_from_selenium:
+    :return:
+    """
+    unit = data_from_selenium.find_element(By.XPATH, './/span[@class="subheading-1 swatch-simple__text"]').text.lower()
+    return unit
+
+
+@decorator_exception
+def search_and_check_volume_of_product(data_from_selenium):
+    volume = data_from_selenium.find_element(By.XPATH,
+                                             './/span[@class="subheading-1 swatch-simple__view"]').text.lower()
+    return volume
