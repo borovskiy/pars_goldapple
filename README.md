@@ -1,1 +1,2 @@
-# pars_goldapple
+Запустить parser.py
+Ждать чуда
